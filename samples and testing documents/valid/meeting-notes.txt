@@ -1,0 +1,6 @@
+﻿Team meeting - 21 Oct 2026
+
+- Move the file server to the new rack
+- Review cleaning contract
+- Next meeting: 4 Nov 2026
+
