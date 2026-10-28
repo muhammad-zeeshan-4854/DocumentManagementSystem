@@ -1,0 +1,75 @@
+﻿<!DOCTYPE html>
+@inject DocumentManagement.Web.Helper.ICompanyContext CompanyContext
+@inject DocumentManagement.Web.Services.IParameterService ParameterService
+@inject DocumentManagement.Web.Services.ICompanyService CompanyService
+@{
+    string strSystemName = (await ParameterService.GetParametersAsync(Context.RequestAborted)).SystemName;
+    var lstCompanies = await CompanyService.GetCompanyListAsync(Context.RequestAborted);
+    int iCurrentCompanyID = await CompanyContext.GetCompanyIDAsync(Context.RequestAborted);
+}
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - @strSystemName</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container">
+                <a class="navbar-brand fw-semibold" asp-controller="Documents" asp-action="Index">@strSystemName</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
+                        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item"><a class="nav-link text-dark" asp-controller="Documents" asp-action="Index">Documents</a></li>
+                        <li class="nav-item"><a class="nav-link text-dark" asp-controller="Documents" asp-action="Upload">Upload</a></li>
+                        <li class="nav-item"><a class="nav-link text-dark" asp-controller="AuditLog" asp-action="Index">Audit log</a></li>
+                    </ul>
+                    @if (lstCompanies.Count > 0)
+                    {
+                        <form class="d-flex align-items-center gap-2" asp-controller="Company" asp-action="Switch" method="post">
+                            <label for="companyID" class="small text-muted text-nowrap mb-0">Company</label>
+                            <select id="companyID" name="companyID" class="form-select form-select-sm" data-submit-on-change>
+                                @foreach (var oCompany in lstCompanies)
+                                {
+                                    <option value="@oCompany.CompanyID" selected="@(oCompany.CompanyID == iCurrentCompanyID)">@oCompany.CompanyName</option>
+                                }
+                            </select>
+                            <noscript><button type="submit" class="btn btn-sm btn-outline-secondary">Switch</button></noscript>
+                        </form>
+                    }
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container">
+        <main role="main" class="pb-3">
+            @if (TempData["SuccessMessage"] is string strSuccess)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    @strSuccess
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+            @if (TempData["ErrorMessage"] is string strError)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    @strError
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+            @RenderBody()
+        </main>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

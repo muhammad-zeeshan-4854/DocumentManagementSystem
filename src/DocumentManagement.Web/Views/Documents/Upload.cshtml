@@ -1,0 +1,64 @@
+@model UploadDocumentViewModel
+@inject DocumentManagement.Web.Services.IParameterService ParameterService
+@{
+    ViewData["Title"] = "Upload document";
+    string strAccept = string.Join(",", Model.AllowedFileTypes.Select(oType => oType.FileExtension));
+    var oParameters = await ParameterService.GetParametersAsync(Context.RequestAborted);
+    string strAllowedTypesJson = System.Text.Json.JsonSerializer.Serialize(
+        Model.AllowedFileTypes.Select(oType => new { extension = oType.FileExtension.ToLowerInvariant(), maxBytes = oType.MaxFileSizeBytes }));
+}
+
+<h1 class="h3 mb-3">Upload document</h1>
+
+<div class="row">
+    <div class="col-lg-7">
+        <form asp-action="Upload" method="post" enctype="multipart/form-data" class="card card-body" id="upload-form"
+              data-allowed-types="@strAllowedTypesJson" data-max-upload-bytes="@oParameters.MaxUploadSizeBytes">
+            <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+
+            <div class="mb-3">
+                <label asp-for="Title" class="form-label">Title</label>
+                <input asp-for="Title" class="form-control" autocomplete="off" maxlength="@oParameters.MaxTitleLength" />
+                <div id="title-error" class="invalid-feedback"></div>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="File" class="form-label">File</label>
+                <input asp-for="File" type="file" class="form-control" accept="@strAccept" />
+                <div id="file-error" class="invalid-feedback"></div>
+            </div>
+
+            <div>
+                <button type="submit" class="btn btn-primary">Upload</button>
+                <a asp-action="Index" class="btn btn-link">Cancel</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="col-lg-5 mt-3 mt-lg-0">
+        <div class="card card-body">
+            <h2 class="h6">Accepted files</h2>
+            @if (Model.AllowedFileTypes.Count == 0)
+            {
+                <p class="small text-muted mb-0">No file types are currently enabled.</p>
+            }
+            else
+            {
+                <ul class="list-unstyled small mb-0">
+                    @foreach (var oType in Model.AllowedFileTypes)
+                    {
+                        <li><code>@oType.FileExtension</code> up to @FormatHelper.FileSize(oType.MaxFileSizeBytes)</li>
+                    }
+                </ul>
+                <p class="small text-muted mt-2 mb-0">
+                    Maximum upload size: @FormatHelper.FileSize(oParameters.MaxUploadSizeBytes).
+                    Password protected or damaged files, and files with scripts or macros, are not accepted.
+                </p>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/document-upload.js" asp-append-version="true"></script>
+}

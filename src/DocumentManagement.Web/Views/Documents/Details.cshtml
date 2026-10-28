@@ -1,0 +1,78 @@
+@model DocumentDetailViewModel
+@inject DocumentManagement.Web.Services.IParameterService ParameterService
+@{
+    var oDocument = Model.Document;
+    int iMaxNoteLength = (await ParameterService.GetParametersAsync(Context.RequestAborted)).MaxNoteLength;
+    ViewData["Title"] = oDocument.Title;
+    string strPreviewUrl = Url.Action("ViewFile", new { id = oDocument.DocumentID })!;
+    bool bIsImage = oDocument.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase);
+    bool bIsFramePreview = oDocument.ContentType is "application/pdf" or "text/plain" or DocumentManagement.Web.Helper.WordPreviewBuilder.WordContentType;
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+    <div>
+        <a asp-action="Index" class="small">&larr; All documents</a>
+        <h1 class="h3 mb-1 text-break">@oDocument.Title</h1>
+        <p class="text-muted small mb-0">
+            @oDocument.OriginalFileName &middot; @FormatHelper.FileSize(oDocument.FileSizeBytes) &middot;
+            added <time datetime="@FormatHelper.IsoDate(oDocument.DateAdded)">@FormatHelper.UtcDate(oDocument.DateAdded)</time>
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary" asp-action="Download" asp-route-id="@oDocument.DocumentID">Download</a>
+        <form asp-action="Delete" asp-route-id="@oDocument.DocumentID" method="post"
+              data-confirm="Delete &quot;@oDocument.Title&quot;? It will no longer appear in the list.">
+            <button type="submit" class="btn btn-outline-danger">Delete</button>
+        </form>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="small text-muted" id="note-mode-hint">Turn on "Add note", then click where the note belongs.</span>
+            <button type="button" class="btn btn-sm btn-primary" id="note-mode-toggle" aria-pressed="false">Add note</button>
+        </div>
+
+        <div id="note-board" class="note-board border rounded" data-notes-url="/documents/@oDocument.DocumentID/notes">
+            @if (bIsImage)
+            {
+                <img src="@strPreviewUrl" alt="@oDocument.Title" class="note-board-image" />
+            }
+            else if (bIsFramePreview)
+            {
+                <iframe src="@strPreviewUrl" title="@oDocument.Title" class="note-board-frame"></iframe>
+            }
+            else
+            {
+                <div class="note-board-placeholder text-muted">
+                    <p class="mb-1">No in-browser preview for @oDocument.FileExtension files.</p>
+                    <p class="small mb-0">Download the file to read it. Notes can still be pinned on this board.</p>
+                </div>
+            }
+            <div id="note-layer" class="note-layer" aria-label="Document notes"></div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <h2 class="h6">Notes <span class="badge text-bg-secondary" id="note-count">0</span></h2>
+        <div id="note-list-status" class="small text-muted">Loading notes&hellip;</div>
+        <ol id="note-list" class="note-list list-unstyled mb-0"></ol>
+    </div>
+</div>
+
+<form id="note-editor" class="note-editor card card-body shadow-sm" hidden>
+    <label for="note-text" class="form-label small mb-1">Note</label>
+    <textarea id="note-text" class="form-control form-control-sm mb-2" rows="3" maxlength="@iMaxNoteLength"></textarea>
+    <div id="note-error" class="text-danger small mb-2" role="alert" hidden></div>
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-sm btn-primary" id="note-save">Save</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="note-cancel">Cancel</button>
+    </div>
+</form>
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+    <script src="~/js/document-notes.js" asp-append-version="true"></script>
+}

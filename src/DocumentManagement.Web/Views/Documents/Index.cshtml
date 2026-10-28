@@ -1,0 +1,100 @@
+@model DocumentListViewModel
+@{
+    ViewData["Title"] = "Documents";
+    var oPage = Model.Documents;
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h1 class="h3 mb-0">Documents</h1>
+    <a class="btn btn-primary" asp-action="Upload">Upload document</a>
+</div>
+
+<form method="get" asp-action="Index" class="row g-2 mb-3" role="search">
+    <div class="col-sm-8 col-md-6">
+        <label for="search" class="visually-hidden">Search by title</label>
+        <input id="search" name="search" type="search" class="form-control" placeholder="Search by title" value="@Model.Search" />
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-outline-primary">Search</button>
+        @if (!string.IsNullOrWhiteSpace(Model.Search))
+        {
+            <a class="btn btn-link" asp-action="Index">Clear</a>
+        }
+    </div>
+</form>
+
+@if (Model.ErrorMessage is not null)
+{
+    <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+}
+else if (oPage.Items.Count == 0)
+{
+    <div class="text-center text-muted border rounded py-5">
+        @if (oPage.PageNumber > 1)
+        {
+            <p class="mb-2">There are no documents on page @oPage.PageNumber.</p>
+            <a asp-action="Index" asp-route-search="@Model.Search">Go to the first page</a>
+        }
+        else if (string.IsNullOrWhiteSpace(Model.Search))
+        {
+            <p class="mb-2">No documents yet for this company.</p>
+            <a asp-action="Upload">Upload the first one</a>
+        }
+        else
+        {
+            <p class="mb-0">No documents match "@Model.Search".</p>
+        }
+    </div>
+}
+else
+{
+    <p class="small text-muted">@oPage.TotalCount document@(oPage.TotalCount == 1 ? "" : "s")</p>
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th scope="col">Title</th>
+                    <th scope="col">File</th>
+                    <th scope="col" class="text-end">Size</th>
+                    <th scope="col" class="text-end">Notes</th>
+                    <th scope="col">Added</th>
+                    <th scope="col"><span class="visually-hidden">Actions</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var oDocument in oPage.Items)
+                {
+                    <tr>
+                        <td><a asp-action="Details" asp-route-id="@oDocument.DocumentID" class="fw-semibold">@oDocument.Title</a></td>
+                        <td class="text-muted small text-break">@oDocument.OriginalFileName</td>
+                        <td class="text-end text-nowrap">@FormatHelper.FileSize(oDocument.FileSizeBytes)</td>
+                        <td class="text-end">@oDocument.NoteCount</td>
+                        <td class="text-nowrap"><time datetime="@FormatHelper.IsoDate(oDocument.DateAdded)">@FormatHelper.UtcDate(oDocument.DateAdded)</time></td>
+                        <td class="text-end text-nowrap">
+                            <a class="btn btn-sm btn-outline-secondary" asp-action="Download" asp-route-id="@oDocument.DocumentID">Download</a>
+                            <form asp-action="Delete" asp-route-id="@oDocument.DocumentID" method="post" class="d-inline"
+                                  data-confirm="Delete &quot;@oDocument.Title&quot;? It will no longer appear in the list.">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (oPage.TotalPages > 1)
+    {
+        <nav aria-label="Document pages">
+            <ul class="pagination">
+                <li class="page-item @(oPage.PageNumber <= 1 ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-search="@Model.Search" asp-route-page="@(oPage.PageNumber - 1)">Previous</a>
+                </li>
+                <li class="page-item disabled"><span class="page-link">Page @oPage.PageNumber of @oPage.TotalPages</span></li>
+                <li class="page-item @(oPage.PageNumber >= oPage.TotalPages ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-search="@Model.Search" asp-route-page="@(oPage.PageNumber + 1)">Next</a>
+                </li>
+            </ul>
+        </nav>
+    }
+}

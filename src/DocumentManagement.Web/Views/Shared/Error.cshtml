@@ -1,0 +1,20 @@
+﻿@model ErrorViewModel
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<div class="py-4">
+    <p class="text-muted mb-1">Error @Model.StatusCode</p>
+    <h1 class="h3">@Model.Title</h1>
+    <p class="lead">@Model.Message</p>
+    <p class="small text-muted">Error id: <code>@Model.ErrorId</code></p>
+    <a class="btn btn-primary" asp-controller="Documents" asp-action="Index">Back to documents</a>
+
+    @if (Model.DeveloperDetails is not null)
+    {
+        <details class="mt-4">
+            <summary>Exception details (Development only)</summary>
+            <pre class="small bg-light p-3 border rounded mt-2">@Model.DeveloperDetails</pre>
+        </details>
+    }
+</div>

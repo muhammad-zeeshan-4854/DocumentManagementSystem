@@ -1,0 +1,81 @@
+@model AuditLogListViewModel
+@{
+    ViewData["Title"] = "Audit log";
+    var oPage = Model.AuditLogs;
+}
+
+<h1 class="h3 mb-3">Audit log</h1>
+
+@if (Model.ErrorMessage is not null)
+{
+    <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+}
+else if (oPage.Items.Count == 0)
+{
+    <div class="text-center text-muted border rounded py-5">
+        @if (oPage.PageNumber > 1)
+        {
+            <p class="mb-2">There are no entries on page @oPage.PageNumber.</p>
+            <a asp-action="Index">Go to the first page</a>
+        }
+        else
+        {
+            <p class="mb-0">Nothing has happened in this company yet.</p>
+        }
+    </div>
+}
+else
+{
+    <p class="small text-muted">@oPage.TotalCount entr@(oPage.TotalCount == 1 ? "y" : "ies")</p>
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th scope="col">When</th>
+                    <th scope="col">Action</th>
+                    <th scope="col">Document</th>
+                    <th scope="col">Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var oAuditLog in oPage.Items)
+                {
+                    <tr>
+                        <td class="text-nowrap"><time datetime="@FormatHelper.IsoDate(oAuditLog.DateAdded)">@FormatHelper.UtcDate(oAuditLog.DateAdded)</time></td>
+                        <td class="text-nowrap"><span class="badge text-bg-light border">@FormatHelper.AuditAction(oAuditLog.ActionType)</span></td>
+                        <td class="text-break">
+                            @if (oAuditLog.IsDocumentAvailable)
+                            {
+                                <a asp-controller="Documents" asp-action="Details" asp-route-id="@oAuditLog.DocumentID">@oAuditLog.DocumentTitle</a>
+                            }
+                            else if (oAuditLog.DocumentTitle is not null)
+                            {
+                                @oAuditLog.DocumentTitle <span class="text-muted small">(deleted)</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">&mdash;</span>
+                            }
+                        </td>
+                        <td class="text-break">@oAuditLog.ActionDetail</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (oPage.TotalPages > 1)
+    {
+        <nav aria-label="Audit log pages">
+            <ul class="pagination">
+                <li class="page-item @(oPage.PageNumber <= 1 ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-page="@(oPage.PageNumber - 1)">Previous</a>
+                </li>
+                <li class="page-item disabled"><span class="page-link">Page @oPage.PageNumber of @oPage.TotalPages</span></li>
+                <li class="page-item @(oPage.PageNumber >= oPage.TotalPages ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-page="@(oPage.PageNumber + 1)">Next</a>
+                </li>
+            </ul>
+        </nav>
+    }
+}
